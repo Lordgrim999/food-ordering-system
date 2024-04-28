@@ -7,6 +7,7 @@ import org.food.ordering.system.order.service.domain.valueobject.OrderItemId;
 import org.food.ordering.system.order.service.domain.valueobject.StreetAddress;
 import org.food.ordering.system.order.service.domain.valueobject.TrackingId;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,6 +67,41 @@ public class Order extends AggregateRoot<OrderId> {
         orderStatus=OrderStatus.PENDING;
         initializeOrderItems();
     }
+
+    public void pay(){
+        if(orderStatus!=OrderStatus.PENDING)
+            throw new OrderDomainException("Order is not is the correct state for pay operation");
+        orderStatus=OrderStatus.PAID;
+    }
+    public void approve(){
+        if(orderStatus!=OrderStatus.PAID)
+            throw new OrderDomainException("Order is not is the correct state for approve operation");
+        orderStatus=OrderStatus.APPROVED;
+    }
+
+    public void initCancel(List<String> failureMessages){
+        if(orderStatus!=OrderStatus.PAID)
+            throw new OrderDomainException("Order is not is the correct state for initCancel operation");
+        orderStatus=OrderStatus.CANCELLING;
+        updateFailureMessages(failureMessages);
+    }
+
+    public void cancel(List<String> failureMessages){
+        if(!(orderStatus==OrderStatus.PENDING || orderStatus==OrderStatus.CANCELLING))
+            throw new OrderDomainException("Order is not is the correct state for cancel operation");
+        orderStatus=OrderStatus.CANCELLED;
+        updateFailureMessages(failureMessages);
+    }
+
+    private void updateFailureMessages(List<String> failureMessages) {
+        if(this.failureMessages!=null && failureMessages!=null)
+            this.failureMessages.addAll(failureMessages);
+        if(this.failureMessages==null && failureMessages!=null)
+        {
+            this.failureMessages=new ArrayList<>(failureMessages);
+        }
+    }
+
 
     private void initializeOrderItems() {
         long orderItemId=1;
